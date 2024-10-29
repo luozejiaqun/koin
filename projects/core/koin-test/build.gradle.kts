@@ -4,10 +4,42 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
+    id("maven-publish")
+}
+
+group = "com.boyasec.kmp"
+version = "4.0.0"
+val artifact by extra("koin-test")
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["kotlin"])
+            groupId = project.group.toString()
+            version = project.version.toString()
+            artifactId = artifact
+        }
+    }
+
+    repositories {
+        maven {
+            credentials {
+                username = "admin"
+                password = "juj88P#FPng3"
+            }
+            val releasesRepoUrl = "http://192.168.50.32:8081/repository/maven-releases/"
+            val snapshotsRepoUrl = "http://192.168.50.32:8081/repository/maven-snapshots/"
+            url = uri(if ((version as String).endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
+            isAllowInsecureProtocol = true
+        }
+    }
 }
 
 kotlin {
-    jvmToolchain(1_8)
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+
     jvm {
         withJava()
     }
@@ -27,14 +59,14 @@ kotlin {
     iosSimulatorArm64()
     macosX64()
     macosArm64()
-    watchosArm32()
+    /*watchosArm32()
     watchosArm64()
     watchosDeviceArm64()
     watchosSimulatorArm64()
     watchosX64()
     tvosArm64()
     tvosSimulatorArm64()
-    tvosX64()
+    tvosX64()*/
     mingwX64()
     linuxX64()
     linuxArm64()
@@ -56,8 +88,6 @@ kotlin {
 
 tasks.withType<KotlinCompile>().all {
     compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_1_8)
+            jvmTarget.set(JvmTarget.JVM_11)
         }
 }
-
-apply(from = file("../../gradle/publish.gradle.kts"))

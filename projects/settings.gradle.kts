@@ -1,3 +1,4 @@
+rootProject.name = "KoinProject"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 pluginManagement {
     repositories {
@@ -17,35 +18,27 @@ dependencyResolutionManagement {
 include(
     // Core
     ":core:koin-core",
-    ":core:koin-core-coroutines",
-    ":core:koin-core-viewmodel",
-    ":core:koin-core-viewmodel-navigation",
+//    ":core:koin-core-coroutines",
+//    ":core:koin-core-viewmodel",
     ":core:koin-test",
-    ":core:koin-test-junit4",
-    ":core:koin-test-junit5",
-
-    // Fu DSL - Experimental
-    ":core:koin-fu",
-    ":core:koin-fu-viewmodel",
-
+//    ":core:koin-test-junit4",
+//    ":core:koin-test-junit5",
     // Ktor
-    ":ktor:koin-ktor",
-    ":ktor:koin-logger-slf4j",
+//    ":ktor:koin-ktor",
+//    ":ktor:koin-logger-slf4j",
     // Android
-    ":android:koin-android",
-    ":android:koin-android-compat",
-    ":android:koin-androidx-navigation",
-    ":android:koin-androidx-workmanager",
-    ":android:koin-android-test",
-    ":android:koin-androidx-startup",
+//    ":android:koin-android",
+//    ":android:koin-android-compat",
+//    ":android:koin-androidx-navigation",
+//    ":android:koin-androidx-workmanager",
+//    ":android:koin-android-test",
     // Compose
-    ":compose:koin-compose",
-    ":compose:koin-compose-viewmodel",
-    ":compose:koin-compose-viewmodel-navigation",
-    ":compose:koin-androidx-compose",
-    ":compose:koin-androidx-compose-navigation",
+//    ":compose:koin-compose",
+//    ":compose:koin-compose-viewmodel",
+//    ":compose:koin-androidx-compose",
+//    ":compose:koin-androidx-compose-navigation",
     // Plugin
-    ":plugins:koin-gradle-plugin",
+//    ":plugins:koin-gradle-plugin",
     // BOM
-    ":bom:koin-bom",
+//    ":bom:koin-bom",
 )
