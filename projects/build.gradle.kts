@@ -6,7 +6,7 @@ plugins {
     alias(libs.plugins.dokka).apply(false)
 //    alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.kotlinBinary)
-    alias(libs.plugins.nexusPublish)
+    alias(libs.plugins.atomicfu)
 }
 
 fun getRepositoryUsername(): String =
@@ -15,7 +15,7 @@ fun getRepositoryUsername(): String =
 fun getRepositoryPassword(): String =
     findProperty("OSSRH_PASSWORD")?.toString() ?: System.getenv("OSSRH_PASSWORD") ?: ""
 
-nexusPublishing {
+/*nexusPublishing {
     repositories {
         sonatype {
             nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
@@ -23,7 +23,7 @@ nexusPublishing {
             password.set(getRepositoryPassword())
         }
     }
-}
+}*/
 
 allprojects {
 

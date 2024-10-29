@@ -12,6 +12,17 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven {
+            url = uri("http://192.168.50.32:8081/repository/maven-releases/")
+            isAllowInsecureProtocol = true
+            credentials {
+                username = "admin"
+                password = "juj88P#FPng3"
+            }
+            content {
+                includeGroupAndSubgroups("com.boyasec")
+            }
+        }
     }
 }
 

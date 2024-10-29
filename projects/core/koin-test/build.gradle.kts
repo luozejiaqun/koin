@@ -73,12 +73,12 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            api(project(":core:koin-core"))
+            implementation("$group:koin-core:$version")
             //TODO remove in 3.6
-            api(libs.kotlin.test)
+            implementation(libs.kotlin.test)
         }
         jvmMain.dependencies {
-            api(kotlin("reflect"))
+            implementation(kotlin("reflect"))
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)
