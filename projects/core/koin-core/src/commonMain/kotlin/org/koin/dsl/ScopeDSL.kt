@@ -22,13 +22,10 @@ import org.koin.core.module.KoinDslMarker
 import org.koin.core.module.MapMultibinding
 import org.koin.core.module.MapMultibindingElementDefinition
 import org.koin.core.module.Module
-import org.koin.core.module.MultibindingIterateKey
 import org.koin.core.module.SetMultibinding
 import org.koin.core.module.SetMultibindingElementDefinition
 import org.koin.core.module._scopedInstanceFactory
 import org.koin.core.module.mapMultibindingQualifier
-import org.koin.core.module.multibindingIterateKeyQualifier
-import org.koin.core.module.multibindingValueQualifier
 import org.koin.core.module.setMultibindingQualifier
 import org.koin.core.qualifier.Qualifier
 
@@ -67,7 +64,12 @@ class ScopeDSL(val scopeQualifier: Qualifier, val module: Module) {
         scoped<Map<K, V>>(qualifier) { parametersHolder ->
             MapMultibinding(false, this, qualifier, V::class, parametersHolder)
         }
-        return MapMultibindingElementDefinition<K, V>(qualifier, V::class, null, this).apply {
+        return MapMultibindingElementDefinition<K, V>(
+            multibindingQualifier = qualifier,
+            elementClass = V::class,
+            declareModule = module,
+            scopeQualifier = scopeQualifier,
+        ).apply {
             elementDefinition(this)
         }
     }
@@ -84,7 +86,12 @@ class ScopeDSL(val scopeQualifier: Qualifier, val module: Module) {
         scoped<Set<E>>(qualifier) { parametersHolder ->
             SetMultibinding(false, this, qualifier, E::class, parametersHolder)
         }
-        return SetMultibindingElementDefinition(qualifier, E::class, null, this).apply {
+        return SetMultibindingElementDefinition(
+            multibindingQualifier = qualifier,
+            elementClass = E::class,
+            declareModule = module,
+            scopeQualifier = scopeQualifier,
+        ).apply {
             elementDefinition(this)
         }
     }
