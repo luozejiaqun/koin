@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.boyasec.kmp"
-version = "4.0.0"
+version = "4.0.1"
 val artifact by extra("koin-core")
 
 publishing {
