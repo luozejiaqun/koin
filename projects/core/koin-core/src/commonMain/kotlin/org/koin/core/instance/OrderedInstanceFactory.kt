@@ -16,6 +16,7 @@
 package org.koin.core.instance
 
 import org.koin.core.scope.Scope
+import kotlin.reflect.KClass
 
 /**
  * Instance holder with order
@@ -26,7 +27,12 @@ internal data class OrderedInstanceFactory<T>(
     private val instanceFactory: InstanceFactory<T>,
     private val order: Int,
     private val ascending: Boolean,
-) : InstanceFactory<T>(instanceFactory.beanDefinition), Comparable<OrderedInstanceFactory<*>> {
+) : InstanceFactory<T>(instanceFactory.beanDefinition),
+    TaggedInstanceFactory,
+    Comparable<OrderedInstanceFactory<*>> {
+
+    override val tags: Set<KClass<*>> =
+        if (instanceFactory is TaggedInstanceFactory) instanceFactory.tags else emptySet()
 
     override fun isCreated(context: ResolutionContext?): Boolean =
         instanceFactory.isCreated(context)

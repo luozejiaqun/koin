@@ -307,7 +307,7 @@ class Scope(
         ctx: ResolutionContext
     ): T? {
         return try {
-            get(ctx.clazz, ctx.qualifier, ctx.parameters)
+            get(ctx.clazz, ctx.qualifier, ctx.parameters, ctx.fromInternal)
         } catch (e: ClosedScopeException) {
             _koin.logger.debug("* Scope closed - no instance found for ${ctx.clazz.getFullName()} on scope ${toString()}")
             null
@@ -333,25 +333,36 @@ class Scope(
         return resolveWithOptionalLogging(clazz, qualifier,parameters?.invoke())
     }
 
+    internal fun <T> getInternalOrNull(
+        clazz: KClass<*>,
+        qualifier: Qualifier? = null,
+        parameters: ParametersDefinition? = null,
+    ): T? {
+        return runCatching<T> { resolveWithOptionalLogging(clazz, qualifier, parameters?.invoke(), true) }
+            .getOrNull()
+    }
+
     private fun <T> get(
         clazz: KClass<*>,
         qualifier: Qualifier? = null,
         parameters: ParametersHolder? = null,
+        fromInternal: Boolean = false,
     ): T {
-        return resolveWithOptionalLogging(clazz, qualifier, parameters)
+        return resolveWithOptionalLogging(clazz, qualifier, parameters, fromInternal)
     }
 
     private fun <T> resolveWithOptionalLogging(
         clazz: KClass<*>,
         qualifier: Qualifier?,
-        parameters: ParametersHolder? = null
+        parameters: ParametersHolder? = null,
+        fromInternal: Boolean = false,
     ): T {
         if (!_koin.logger.isAt(Level.DEBUG)) {
-            return resolveInstance(qualifier, clazz, parameters)
+            return resolveInstance(qualifier, clazz, parameters, fromInternal)
         }
 
         logInstanceRequest(clazz, qualifier)
-        val result = measureTimedValue { resolveInstance<T>(qualifier, clazz, parameters) }
+        val result = measureTimedValue { resolveInstance<T>(qualifier, clazz, parameters, fromInternal) }
         logInstanceDuration(clazz, result.duration)
 
         return result.value
@@ -371,9 +382,10 @@ class Scope(
         qualifier: Qualifier?,
         clazz: KClass<*>,
         parameters: ParametersHolder?,
+        fromInternal: Boolean,
     ): T {
         checkScopeIsOpen()
-        val instanceContext = ResolutionContext(_koin.logger, this, clazz, qualifier, parameters)
+        val instanceContext = ResolutionContext(_koin.logger, this, clazz, qualifier, parameters, fromInternal)
         return stackParametersCall(parameters, instanceContext)
     }
 
@@ -554,6 +566,11 @@ class Scope(
     fun <T> getAll(clazz: KClass<*>): List<T> {
         val context = ResolutionContext(_koin.logger, this, clazz)
         return _koin.instanceRegistry.getAll<T>(clazz, context) + linkedScopes.flatMap { scope -> scope.getAll(clazz) }
+    }
+
+    internal fun <T> getAllInternal(clazz: KClass<*>): List<T> {
+        val context = ResolutionContext(_koin.logger, this, clazz, fromInternal = true)
+        return _koin.instanceRegistry.getAll<T>(clazz, context) + linkedScopes.flatMap { scope -> scope.getAllInternal(clazz) }
     }
 
     /**

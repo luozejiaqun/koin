@@ -24,10 +24,12 @@ import org.koin.core.definition._createDefinition
 import org.koin.core.definition.indexKey
 import org.koin.core.instance.ResolutionContext
 import org.koin.core.instance.InstanceFactory
+import org.koin.core.instance.InternalInstanceFactory
 import org.koin.core.instance.NoClass
 import org.koin.core.instance.OrderedInstanceFactory
 import org.koin.core.instance.ScopedInstanceFactory
 import org.koin.core.instance.SingleInstanceFactory
+import org.koin.core.instance.isTaggedWith
 import org.koin.core.module.Module
 import org.koin.core.module.overrideError
 import org.koin.core.qualifier.Qualifier
@@ -46,6 +48,8 @@ class InstanceRegistry(val _koin: Koin) {
         get() = _instances
 
     private val eagerInstances = safeHashMap<Int, SingleInstanceFactory<*>>()
+
+    internal val internalInstances = safeHashMap<IndexKey, InstanceFactory<*>>()
 
     internal fun loadModules(modules: Set<Module>, allowOverride: Boolean) {
         modules.forEach { module ->
@@ -87,10 +91,15 @@ class InstanceRegistry(val _koin: Koin) {
             }
         }
         _koin.logger.debug("(+) index '$mapping' -> '${factory.beanDefinition}'")
-        _instances[mapping] = if (factory is OrderedInstanceFactory<*>) {
+        val instanceFactory = if (factory is OrderedInstanceFactory<*>) {
             factory.copy(order = instanceOrder.incrementAndGet())
         } else {
             factory
+        }
+        if (instanceFactory.isTaggedWith(InternalInstanceFactory::class)) {
+            internalInstances[mapping] = instanceFactory
+        } else {
+            _instances[mapping] = instanceFactory
         }
     }
 
@@ -103,9 +112,14 @@ class InstanceRegistry(val _koin: Koin) {
         clazz: KClass<*>,
         qualifier: Qualifier?,
         scopeQualifier: Qualifier,
+        fromInternal: Boolean,
     ): InstanceFactory<*>? {
         val indexKey = indexKey(clazz, qualifier, scopeQualifier)
-        return _instances[indexKey]
+        return if (fromInternal) {
+            internalInstances[indexKey] ?: _instances[indexKey]
+        } else {
+            _instances[indexKey]
+        }
     }
 
     internal fun <T> resolveInstance(
@@ -114,7 +128,7 @@ class InstanceRegistry(val _koin: Koin) {
         scopeQualifier: Qualifier,
         instanceContext: ResolutionContext,
     ): T? {
-        return resolveDefinition(clazz, qualifier, scopeQualifier)?.get(instanceContext) as? T
+        return resolveDefinition(clazz, qualifier, scopeQualifier, instanceContext.fromInternal)?.get(instanceContext) as? T
     }
 
     @PublishedApi
@@ -162,19 +176,23 @@ class InstanceRegistry(val _koin: Koin) {
     }
 
     internal fun dropScopeInstances(scope: Scope) {
-        _instances.values.filterIsInstance<ScopedInstanceFactory<*>>()
-            .forEach { factory -> factory.drop(scope) }
+        listOf(_instances, internalInstances).forEach { map ->
+            map.values.filterIsInstance<ScopedInstanceFactory<*>>()
+                .forEach { factory -> factory.drop(scope) }
+        }
     }
 
     internal fun close() {
-        _instances.forEach { (_, factory) ->
-            factory.dropAll()
+        listOf(_instances, internalInstances).forEach { map ->
+            map.forEach { (_, factory) ->
+                factory.dropAll()
+            }
+            map.clear()
         }
-        _instances.clear()
     }
 
     internal fun <T> getAll(clazz: KClass<*>, instanceContext: ResolutionContext): List<T> {
-        return _instances.values
+        return (if (instanceContext.fromInternal) internalInstances else _instances).values
             .filter { factory ->
                 factory.beanDefinition.scopeQualifier == instanceContext.scope.scopeQualifier &&
                 (factory.beanDefinition.primaryType == clazz || factory.beanDefinition.secondaryTypes.contains(clazz))
@@ -199,8 +217,9 @@ class InstanceRegistry(val _koin: Koin) {
 
     private fun unloadModule(module: Module) {
         module.mappings.keys.forEach { mapping ->
-            _instances[mapping]?.dropAll()
+            (_instances[mapping] ?: internalInstances[mapping])?.dropAll()
             _instances.remove(mapping)
+            internalInstances.remove(mapping)
         }
     }
 

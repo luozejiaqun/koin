@@ -15,6 +15,7 @@
  */
 package org.koin.core.module
 
+import co.touchlab.stately.collections.ConcurrentMutableMap
 import co.touchlab.stately.concurrency.AtomicInt
 import org.koin.core.annotation.KoinInternalApi
 import org.koin.core.definition.BeanDefinition
@@ -22,9 +23,11 @@ import org.koin.core.definition.Definition
 import org.koin.core.definition.Kind
 import org.koin.core.definition.indexKey
 import org.koin.core.instance.InstanceFactory
+import org.koin.core.instance.InternalInstanceFactory
 import org.koin.core.instance.ScopedInstanceFactory
 import org.koin.core.instance.SingleInstanceFactory
 import org.koin.core.instance.keepDefinitionOrderAcrossModules
+import org.koin.core.instance.withTag
 import org.koin.core.parameter.ParametersHolder
 import org.koin.core.qualifier.Qualifier
 import org.koin.core.qualifier.QualifierValue
@@ -130,7 +133,7 @@ class MapMultibindingElementDefinition<in K : Any, in E : Any> @PublishedApi int
     private fun declareElement(key: K, definition: Definition<E>): Qualifier {
         val elementQualifier = multibindingElementQualifier(keyClass, multibindingQualifier, key)
         singleOrScopedInstance(elementQualifier, elementClass, definition) {
-            it.keepDefinitionOrderAcrossModules(ascending = true)
+            it.withTag(InternalInstanceFactory::class)
         }
         return elementQualifier
     }
@@ -145,7 +148,8 @@ class MapMultibindingElementDefinition<in K : Any, in E : Any> @PublishedApi int
                 MultibindingIterateKey(key, multibindingQualifier, elementQualifier)
             },
             instanceFactoryModifier = {
-                it.keepDefinitionOrderAcrossModules(ascending = false)
+                it.withTag(InternalInstanceFactory::class)
+                    .keepDefinitionOrderAcrossModules(ascending = false)
             })
     }
 
@@ -197,6 +201,8 @@ internal class MapMultibinding<K : Any, V>(
     private val valueClass: KClass<*>,
     private val parametersHolder: ParametersHolder,
 ) : Map<K, V> {
+    private val cachedReversedKeys =
+        ConcurrentMutableMap<Int, LinkedHashSet<MultibindingIterateKey<K>>>()
 
     init {
         if (createdAtStart) {
@@ -210,21 +216,27 @@ internal class MapMultibinding<K : Any, V>(
             return reversedKeys.reversed { it.elementKey }
         }
 
-    // this is useful for element override
+    // this is useful for element overriding
+    @OptIn(KoinInternalApi::class)
     internal val reversedKeys: LinkedHashSet<MultibindingIterateKey<K>>
         get() {
-            val multibindingKeys = LinkedHashSet<MultibindingIterateKey<K>>()
-            // MultibindingIterateKey is created by OrderedInstanceFactory(isAscending = false)
-            // so the list here is in reversed order
-            scope.getAll<MultibindingIterateKey<K>>(MultibindingIterateKey::class)
-                .mapNotNullTo(multibindingKeys) {
-                    if (it.multibindingQualifier == qualifier) {
-                        it
-                    } else {
-                        null
+            val keyTag = scope._koin.instanceRegistry.internalInstances.values.sumOf {
+                it.hashCode() * 31
+            }
+            return cachedReversedKeys.getOrPut(keyTag) {
+                val multibindingKeys = LinkedHashSet<MultibindingIterateKey<K>>()
+                // MultibindingIterateKey is created by OrderedInstanceFactory(isAscending = false)
+                // so the list here is in reversed order
+                scope.getAllInternal<MultibindingIterateKey<K>>(MultibindingIterateKey::class)
+                    .mapNotNullTo(multibindingKeys) {
+                        if (it.multibindingQualifier == qualifier) {
+                            it
+                        } else {
+                            null
+                        }
                     }
-                }
-            return multibindingKeys
+                multibindingKeys
+            }
         }
 
     override val size: Int
@@ -251,7 +263,7 @@ internal class MapMultibinding<K : Any, V>(
     }
 
     private fun getOrNull(elementQualifier: Qualifier): V? {
-        return scope.getOrNull<V>(valueClass, elementQualifier) {
+        return scope.getInternalOrNull<V>(valueClass, elementQualifier) {
             parametersHolder
         }
     }
@@ -346,7 +358,7 @@ internal class SetMultibinding<E>(
     override fun iterator(): Iterator<E> = getElementSet(true).iterator()
 
     class Key(private val placeholder: Int) {
-        override fun toString(): String = "placeholder_$placeholder"
+        override fun toString(): String = "placeholder$placeholder"
     }
 
     companion object {
