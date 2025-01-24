@@ -34,7 +34,8 @@ class ResolutionContext(
     val clazz: KClass<*>,
     val qualifier: Qualifier? = null,
     val parameters: ParametersHolder? = null,
-){
+    val fromInternal: Boolean = false,
+) {
     val debugTag = "t:'${clazz.getFullName()}' - q:'$qualifier'"
     var scopeArchetype : TypeQualifier? = null
 
