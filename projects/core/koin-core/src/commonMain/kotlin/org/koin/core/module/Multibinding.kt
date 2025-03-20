@@ -91,14 +91,14 @@ private fun <K> distinctQualifierBasedOnType(
     }
 }
 
-internal data class MultibindingIterateKey<T>(
-    val elementKey: T,
+internal data class MultibindingIterateKey(
+    val elementKey: Any,
     val multibindingQualifier: Qualifier,
 ) {
     var elementQualifier: Qualifier = _q("")
 
     internal constructor(
-        elementKey: T,
+        elementKey: Any,
         multibindingQualifier: Qualifier,
         elementQualifier: Qualifier,
     ) : this(
@@ -206,7 +206,7 @@ internal class MapMultibinding<K : Any, V>(
     private val parametersHolder: ParametersHolder,
 ) : Map<K, V> {
     private val cachedReversedKeys =
-        ConcurrentMutableMap<Int, LinkedHashSet<MultibindingIterateKey<K>>>()
+        ConcurrentMutableMap<Int, LinkedHashSet<MultibindingIterateKey>>()
 
     init {
         if (createdAtStart) {
@@ -214,24 +214,25 @@ internal class MapMultibinding<K : Any, V>(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     override val keys: Set<K>
         get() {
             // in the definition order
-            return reversedKeys.reversed { it.elementKey }
+            return reversedKeys.reversed { it.elementKey as K }
         }
 
     // this is useful for element overriding
     @OptIn(KoinInternalApi::class)
-    internal val reversedKeys: LinkedHashSet<MultibindingIterateKey<K>>
+    internal val reversedKeys: LinkedHashSet<MultibindingIterateKey>
         get() {
             val keyTag = scope._koin.instanceRegistry.internalInstances.values.sumOf {
                 it.hashCode() * 31
             }
             return cachedReversedKeys.getOrPut(keyTag) {
-                val multibindingKeys = LinkedHashSet<MultibindingIterateKey<K>>()
+                val multibindingKeys = LinkedHashSet<MultibindingIterateKey>()
                 // MultibindingIterateKey is created by OrderedInstanceFactory(isAscending = false)
                 // so the list here is in reversed order
-                scope.getAllInternal<MultibindingIterateKey<K>>(MultibindingIterateKey::class)
+                scope.getAllInternal<MultibindingIterateKey>(MultibindingIterateKey::class)
                     .mapNotNullTo(multibindingKeys) {
                         if (it.multibindingQualifier == qualifier) {
                             it
