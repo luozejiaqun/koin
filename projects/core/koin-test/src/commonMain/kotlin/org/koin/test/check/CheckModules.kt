@@ -27,12 +27,9 @@ import org.koin.core.definition.BeanDefinition
 import org.koin.core.logger.Level
 import org.koin.core.module.Module
 import org.koin.core.parameter.ParametersHolder
-import org.koin.core.qualifier.Qualifier
-import org.koin.core.qualifier.TypeQualifier
 import org.koin.core.scope.Scope
 import org.koin.dsl.KoinAppDeclaration
 import org.koin.mp.KoinPlatformTools
-import org.koin.test.mock.MockProvider
 import org.koin.test.parameter.MockParameter
 
 //TODO TO BE DEPRECATED in 4.0
@@ -144,16 +141,7 @@ private fun Koin.checkAllDefinitions(allParameters: ParametersBinding) {
 @OptIn(KoinInternalApi::class)
 private fun Koin.instantiateAllScopes(allParameters: ParametersBinding): List<Scope> {
     return scopeRegistry.scopeDefinitions.map { qualifier ->
-        val sourceScopeValue = mockSourceValue(qualifier)
-        getOrCreateScope(qualifier.value, qualifier, sourceScopeValue)
-    }
-}
-
-private fun mockSourceValue(qualifier: Qualifier): Any? {
-    return if (qualifier is TypeQualifier) {
-        MockProvider.makeMock(qualifier.type)
-    } else {
-        null
+        getOrCreateScope(qualifier.value, qualifier, null)
     }
 }
 
