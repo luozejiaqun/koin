@@ -137,10 +137,10 @@ class InstanceRegistry(val _koin: Koin) {
         qualifier: Qualifier?,
         klass: KClass<*>,
         context: ResolutionContext
-    ) :T? {
+    ): T? {
         return context.scope.scopeArchetype?.let {
             context.scopeArchetype = it
-            resolveInstance(qualifier,klass,it,context)
+            resolveInstance(qualifier, klass, it, context)
         }
     }
 
@@ -150,7 +150,12 @@ class InstanceRegistry(val _koin: Koin) {
         scopeQualifier: Qualifier,
         instanceContext: ResolutionContext,
     ): T? {
-        return resolveDefinition(clazz, qualifier, scopeQualifier, instanceContext.fromInternal)?.get(instanceContext) as? T
+        return resolveDefinition(
+            clazz,
+            qualifier,
+            scopeQualifier,
+            instanceContext.fromInternal
+        )?.get(instanceContext) as? T
     }
 
     @PublishedApi
@@ -161,7 +166,7 @@ class InstanceRegistry(val _koin: Koin) {
         qualifier: Qualifier? = null,
         secondaryTypes: List<KClass<*>> = emptyList(),
         allowOverride: Boolean = true,
-        holdInstance : Boolean
+        holdInstance: Boolean
     ) {
         val primaryType = T::class
         val indexKey = indexKey(primaryType, qualifier, scopeQualifier)
@@ -169,8 +174,10 @@ class InstanceRegistry(val _koin: Koin) {
         if (existingFactory != null) {
             existingFactory.saveValue(scopeID, instance)
         } else {
-            val definitionFunction : Scope.(ParametersHolder) -> T = if (!holdInstance) ( { error("Declared definition of type '$primaryType' shouldn't be executed") } ) else ({ instance })
-            val def: BeanDefinition<T> = _createDefinition(Kind.Scoped, qualifier, definitionFunction, secondaryTypes, scopeQualifier)
+            val definitionFunction: Scope.(ParametersHolder) -> T =
+                if (!holdInstance) ({ error("Declared definition of type '$primaryType' shouldn't be executed") }) else ({ instance })
+            val def: BeanDefinition<T> =
+                _createDefinition(Kind.Scoped, qualifier, definitionFunction, secondaryTypes, scopeQualifier)
             val factory = ScopedInstanceFactory(def, holdInstance = holdInstance)
             saveMapping(allowOverride, indexKey, factory)
             def.secondaryTypes.forEach { clazz ->
@@ -207,8 +214,12 @@ class InstanceRegistry(val _koin: Koin) {
 
     private fun dropScopeInstances(instances: MutableMap<IndexKey, InstanceFactory<*>>, scope: Scope) {
         val factories = instances.values.toTypedArray()
-        factories.filterIsInstance<ScopedInstanceFactory<*>>()
-            .forEach { factory -> factory.drop(scope) }
+        factories.forEach { factory ->
+            if (factory is ScopedInstanceFactory ||
+                factory.isTaggedWith(ScopedInstanceFactory::class)) {
+                factory.drop(scope)
+            }
+        }
     }
 
     internal fun close() {
@@ -226,7 +237,7 @@ class InstanceRegistry(val _koin: Koin) {
         return (if (instanceContext.fromInternal) internalInstances else _instances).values
             .filter { factory ->
                 factory.beanDefinition.scopeQualifier == instanceContext.scope.scopeQualifier &&
-                (factory.beanDefinition.primaryType == clazz || factory.beanDefinition.secondaryTypes.contains(clazz))
+                    (factory.beanDefinition.primaryType == clazz || factory.beanDefinition.secondaryTypes.contains(clazz))
             }
             .distinct()
             .sortedIfNecessary()

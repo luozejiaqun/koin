@@ -32,7 +32,11 @@ internal data class OrderedInstanceFactory<T>(
     Comparable<OrderedInstanceFactory<*>> {
 
     override val tags: Set<KClass<*>> =
-        if (instanceFactory is TaggedInstanceFactory) instanceFactory.tags else emptySet()
+        if (instanceFactory is TaggedInstanceFactory) {
+            instanceFactory.tags + setOf(instanceFactory::class)
+        } else {
+            mutableSetOf(instanceFactory::class)
+        }
 
     override fun isCreated(context: ResolutionContext?): Boolean =
         instanceFactory.isCreated(context)
