@@ -2,6 +2,8 @@ package org.koin.core
 
 import co.touchlab.stately.concurrency.AtomicInt
 import org.koin.Simple
+import org.koin.core.module.dsl.scopedOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier._q
 import org.koin.core.qualifier.named
@@ -58,6 +60,39 @@ class SetMultibindingTest {
         val set2: Set<Simple.ComponentInterface1> = myScope.getSetMultibinding()
         assertEquals(set, set2)
         assertTrue { set.isEmpty() }
+    }
+
+    @Test
+    fun `declare default set multibinding`() {
+        class SetMultibindingHolder(val set: Set<*>)
+
+        val app = koinApplication {
+            modules(
+                module {
+                    declareSetMultibinding<Simple.Component1>(asDefaultSetMultibinding = true) {
+                        intoSet { component1 }
+                    }
+                    singleOf(::SetMultibindingHolder)
+                },
+                module {
+                    scope(scopeKey) {
+                        declareSetMultibinding<Simple.Component2>(asDefaultSetMultibinding = true) {
+                            intoSet { component2 }
+                        }
+                        scopedOf(::SetMultibindingHolder)
+                    }
+                },
+            )
+        }
+
+        val koin = app.koin
+        val myScope = koin.createScope(scopeId, scopeKey)
+        val set: Set<Simple.Component1> =
+            koin.get<SetMultibindingHolder>().set as Set<Simple.Component1>
+        val set2: Set<Simple.Component2> =
+            myScope.get<SetMultibindingHolder>().set as Set<Simple.Component2>
+        assertTrue { set.contains(component1) }
+        assertTrue { set2.contains(component2) }
     }
 
     @Test

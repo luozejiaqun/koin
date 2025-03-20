@@ -46,10 +46,18 @@ import kotlin.reflect.KClass
  * @author - luozejiaqun
  */
 inline fun <reified K, reified V> mapMultibindingQualifier(): Qualifier =
-    StringQualifier("map_multibinding_${K::class.getFullName()}_${V::class.getFullName()}")
+    _q("MapMultibinding<${K::class.getFullName()}, ${V::class.getFullName()}>")
 
 inline fun <reified E> setMultibindingQualifier(): Qualifier =
-    StringQualifier("set_multibinding_${E::class.getFullName()}")
+    _q("SetMultibinding<${E::class.getFullName()}>")
+
+@PublishedApi
+internal val defaultMapMultibinding: Qualifier
+    get() = _q("default-map-multibinding-of-scope")
+
+@PublishedApi
+internal val defaultSetMultibinding: Qualifier
+    get() = _q("default-set-multibinding-of-scope")
 
 private fun <K> multibindingElementQualifier(
     keyClass: KClass<*>,

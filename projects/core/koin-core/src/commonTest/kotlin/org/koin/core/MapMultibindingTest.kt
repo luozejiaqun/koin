@@ -2,6 +2,8 @@ package org.koin.core
 
 import co.touchlab.stately.concurrency.AtomicInt
 import org.koin.Simple
+import org.koin.core.module.dsl.scopedOf
+import org.koin.core.module.dsl.singleOf
 import org.koin.core.parameter.parametersOf
 import org.koin.core.qualifier._q
 import org.koin.core.qualifier.named
@@ -56,6 +58,39 @@ class MapMultibindingTest {
         val map2: Map<String, Simple.ComponentInterface1> = myScope.getMapMultibinding()
         assertEquals(map, map2)
         assertTrue { map.isEmpty() }
+    }
+
+    @Test
+    fun `declare default map multibinding`() {
+        class MapMultibindingHolder(val map: Map<*, *>)
+
+        val app = koinApplication {
+            modules(
+                module {
+                    declareMapMultibinding<String, Simple.Component1>(asDefaultMapMultibinding = true) {
+                        intoMap(keyOfComponent1) { component1 }
+                    }
+                    singleOf(::MapMultibindingHolder)
+                },
+                module {
+                    scope(scopeKey) {
+                        declareMapMultibinding<String, Simple.Component2>(asDefaultMapMultibinding = true) {
+                            intoMap(keyOfComponent2) { component2 }
+                        }
+                        scopedOf(::MapMultibindingHolder)
+                    }
+                },
+            )
+        }
+
+        val koin = app.koin
+        val myScope = koin.createScope(scopeId, scopeKey)
+        val map: Map<String, Simple.Component1> =
+            koin.get<MapMultibindingHolder>().map as Map<String, Simple.Component1>
+        val map2: Map<String, Simple.Component2> =
+            myScope.get<MapMultibindingHolder>().map as Map<String, Simple.Component2>
+        assertEquals(component1, map[keyOfComponent1])
+        assertEquals(component2, map2[keyOfComponent2])
     }
 
     @Test

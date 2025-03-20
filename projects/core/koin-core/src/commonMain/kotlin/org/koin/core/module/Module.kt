@@ -119,13 +119,32 @@ class Module(
      * Declare a Single Map<K, V> definition, the key type [K] can't be null
      * @param qualifier can't be null
      * @param createdAtStart
+     * @param asDefaultMapMultibinding - declare this map multibinding as default
      * @param elementDefinition - call `intoMap` to inject elements
+     *
+     * ```
+     * // default map multibinding example
+     *
+     * class OtherComponent(val map: Map<K, V>)
+     *
+     * module {
+     *   declareMapMultibinding<K, V>(asDefaultMapMultibinding = true)
+     *   singleOf(::OtherComponent)
+     *   // instead of
+     *   single { OtherComponent(getMapMultibinding<K, V>()) }
+     *   // please make sure [OtherComponent.map] is the default map multibinding you want to inject
+     * }
+     * ```
      */
     inline fun <reified K : Any, reified V : Any> declareMapMultibinding(
         qualifier: Qualifier = mapMultibindingQualifier<K, V>(),
         createdAtStart: Boolean = false,
+        asDefaultMapMultibinding: Boolean = false,
         elementDefinition: MapMultibindingElementDefinition<K, V>.() -> Unit = {},
     ): MapMultibindingElementDefinition<K, V> {
+        if (asDefaultMapMultibinding) {
+            single(defaultMapMultibinding) { qualifier }
+        }
         val isCreatedAtStart = createdAtStart || this._createdAtStart
         single<Map<K, V>>(qualifier) { parametersHolder ->
             MapMultibinding(
@@ -152,13 +171,32 @@ class Module(
      * Declare a Single Set<E> definition
      * @param qualifier can't be null
      * @param createdAtStart
+     * @param asDefaultSetMultibinding - declare this set multibinding as default
      * @param elementDefinition - call `intoSet` to inject elements
+     *
+     * ```
+     * // default set multibinding example
+     *
+     * class OtherComponent(val set: Set<E>)
+     *
+     * module {
+     *   declareSetMultibinding<E>(asDefaultSetMultibinding = true)
+     *   singleOf(::OtherComponent)
+     *   // instead of
+     *   single { OtherComponent(getSetMultibinding<E>()) }
+     *   // please make sure [OtherComponent.set] is the default set multibinding you want to inject
+     * }
+     * ```
      */
     inline fun <reified E : Any> declareSetMultibinding(
         qualifier: Qualifier = setMultibindingQualifier<E>(),
         createdAtStart: Boolean = false,
+        asDefaultSetMultibinding: Boolean = false,
         elementDefinition: SetMultibindingElementDefinition<E>.() -> Unit = {},
     ): SetMultibindingElementDefinition<E> {
+        if (asDefaultSetMultibinding) {
+            single(defaultSetMultibinding) { qualifier }
+        }
         val isCreatedAtStart = createdAtStart || this._createdAtStart
         single<Set<E>>(qualifier) { parametersHolder ->
             SetMultibinding<E>(isCreatedAtStart, this, qualifier, E::class, parametersHolder)

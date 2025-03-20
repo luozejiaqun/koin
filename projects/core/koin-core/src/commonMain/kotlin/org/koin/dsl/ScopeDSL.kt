@@ -48,12 +48,31 @@ class ScopeDSL(val scopeQualifier: Qualifier, val module: Module) {
     /**
      * Declare a scoped Map<K, V> definition, the key type [K] can't be null
      * @param qualifier can't be null
+     * @param asDefaultMapMultibinding - declare this map multibinding as default
      * @param elementDefinition - call `intoMap` to inject elements
+     *
+     * ```
+     * // default map multibinding example
+     *
+     * class OtherComponent(val map: Map<K, V>)
+     *
+     * module {
+     *   declareMapMultibinding<K, V>(asDefaultMapMultibinding = true)
+     *   scopedOf(::OtherComponent)
+     *   // instead of
+     *   scoped { OtherComponent(getMapMultibinding<K, V>()) }
+     *   // please make sure [OtherComponent.map] is the default map multibinding you want to inject
+     * }
+     * ```
      */
     inline fun <reified K : Any, reified V : Any> declareMapMultibinding(
         qualifier: Qualifier = mapMultibindingQualifier<K, V>(),
+        asDefaultMapMultibinding: Boolean = false,
         elementDefinition: MapMultibindingElementDefinition<K, V>.() -> Unit = {},
     ): MapMultibindingElementDefinition<K, V> {
+        if (asDefaultMapMultibinding) {
+            scoped(defaultMapMultibinding) { qualifier }
+        }
         scoped<Map<K, V>>(qualifier) { parametersHolder ->
             MapMultibinding(
                 createdAtStart = false,
@@ -78,12 +97,31 @@ class ScopeDSL(val scopeQualifier: Qualifier, val module: Module) {
     /**
      * Declare a scoped Set<E> definition
      * @param qualifier can't be null
+     * @param asDefaultSetMultibinding - declare this set multibinding as default
      * @param elementDefinition - call `intoSet` to inject elements
+     *
+     * ```
+     * // default set multibinding example
+     *
+     * class OtherComponent(val set: Set<E>)
+     *
+     * module {
+     *   declareSetMultibinding<E>(asDefaultSetMultibinding = true)
+     *   scopedOf(::OtherComponent)
+     *   // instead of
+     *   scoped { OtherComponent(getSetMultibinding<E>()) }
+     *   // please make sure [OtherComponent.set] is the default set multibinding you want to inject
+     * }
+     * ```
      */
     inline fun <reified E : Any> declareSetMultibinding(
         qualifier: Qualifier = setMultibindingQualifier<E>(),
+        asDefaultSetMultibinding: Boolean = false,
         elementDefinition: SetMultibindingElementDefinition<E>.() -> Unit = {},
     ): SetMultibindingElementDefinition<E> {
+        if (asDefaultSetMultibinding) {
+            scoped(defaultSetMultibinding) { qualifier }
+        }
         scoped<Set<E>>(qualifier) { parametersHolder ->
             SetMultibinding<E>(false, this, qualifier, E::class, parametersHolder)
         }
