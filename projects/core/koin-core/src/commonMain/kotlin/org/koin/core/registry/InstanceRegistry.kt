@@ -176,10 +176,15 @@ class InstanceRegistry(val _koin: Koin) {
     }
 
     internal fun dropScopeInstances(scope: Scope) {
-        listOf(_instances, internalInstances).forEach { map ->
-            map.values.filterIsInstance<ScopedInstanceFactory<*>>()
-                .forEach { factory -> factory.drop(scope) }
-        }
+        _instances.values
+            .forEach { factory -> (factory as? ScopedInstanceFactory<*>)?.drop(scope) }
+        internalInstances.values
+            .forEach { factory ->
+                if (factory is ScopedInstanceFactory ||
+                    factory.isTaggedWith(ScopedInstanceFactory::class)) {
+                    factory.drop(scope)
+                }
+            }
     }
 
     internal fun close() {
