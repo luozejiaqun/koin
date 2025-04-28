@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.boyasec.kmp"
-version = "4.0.1"
+version = "4.0.5"
 val artifact by extra("koin-test")
 
 publishing {
@@ -27,8 +27,8 @@ publishing {
                 username = "admin"
                 password = "juj88P#FPng3"
             }
-            val releasesRepoUrl = "http://192.168.50.32:8081/repository/maven-releases/"
-            val snapshotsRepoUrl = "http://192.168.50.32:8081/repository/maven-snapshots/"
+            val releasesRepoUrl = "http://192.168.50.27:8081/repository/maven-releases/"
+            val snapshotsRepoUrl = "http://192.168.50.27:8081/repository/maven-snapshots/"
             url = uri(if ((version as String).endsWith("SNAPSHOT")) snapshotsRepoUrl else releasesRepoUrl)
             isAllowInsecureProtocol = true
         }
@@ -49,7 +49,7 @@ kotlin {
         browser()
         binaries.executable()
     }
-    wasmJs {
+    /*wasmJs {
         nodejs()
         binaries.executable()
     }
@@ -59,17 +59,17 @@ kotlin {
     iosSimulatorArm64()
     macosX64()
     macosArm64()
-    /*watchosArm32()
+    watchosArm32()
     watchosArm64()
     watchosDeviceArm64()
     watchosSimulatorArm64()
     watchosX64()
     tvosArm64()
     tvosSimulatorArm64()
-    tvosX64()*/
+    tvosX64()
     mingwX64()
     linuxX64()
-    linuxArm64()
+    linuxArm64()*/
 
     sourceSets {
         commonMain.dependencies {

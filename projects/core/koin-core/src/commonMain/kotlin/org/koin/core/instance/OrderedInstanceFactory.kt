@@ -35,7 +35,7 @@ internal data class OrderedInstanceFactory<T>(
         if (instanceFactory is TaggedInstanceFactory) {
             instanceFactory.tags + setOf(instanceFactory::class)
         } else {
-            setOf(instanceFactory::class)
+            mutableSetOf(instanceFactory::class)
         }
 
     override fun isCreated(context: ResolutionContext?): Boolean =

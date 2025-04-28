@@ -39,7 +39,7 @@ internal fun <T> InstanceFactory<T>.withTag(tag: KClass<*>): InstanceFactory<T> 
     val instanceFactory = this
     return object : InstanceFactory<T>(instanceFactory.beanDefinition), TaggedInstanceFactory {
         override val tags: Set<KClass<*>> =
-            setOf(tag, instanceFactory::class) + (instanceFactory as? TaggedInstanceFactory)?.tags.orEmpty()
+            mutableSetOf(tag, instanceFactory::class) + (instanceFactory as? TaggedInstanceFactory)?.tags.orEmpty()
 
         override fun isCreated(context: ResolutionContext?): Boolean =
             instanceFactory.isCreated(context)
