@@ -88,7 +88,7 @@ class CoreResolver(
     }
 
     private inline fun <T> resolveFromInjectedParameters(ctx: ResolutionContext): T? {
-        return if (ctx.parameters == null || ctx.parameters.isEmpty()) null
+        return if (ctx.parameters == null || ctx.parameters.isEmpty() || ctx.qualifier != null) null
         else {
             ctx.logger.debug("|- ? ${ctx.debugTag} look in injected parameters")
             ctx.parameters.getOrNull(clazz = ctx.clazz)
@@ -97,7 +97,7 @@ class CoreResolver(
 
     private inline fun <T> resolveFromStackedParameters(scope: Scope, ctx: ResolutionContext): T? {
         val current = scope.parameterStack?.get()
-        return if (current.isNullOrEmpty()) null
+        return if (current.isNullOrEmpty() || ctx.qualifier != null) null
         else {
             ctx.logger.debug("|- ? ${ctx.debugTag} look in stack parameters")
             val parameters = current.firstOrNull()
